@@ -2,25 +2,20 @@
 #include "led_patterns.h"
 
 Atm_led dna_led[6];
-Atm_button dna_sensor[3];
+Atm_button dna_sensor[3], big_red_button;
 Atm_step puzzle_controller;
 Atm_timer timer;
 
 #define DNA_GREEN(N) (N*2)
 #define DNA_RED(N) (N*2+1)
 
-void validate_dna(int idx, int v, int up) {
-    if (puzzle_controller.state() != 0) {
-        Serial.println(puzzle_controller.state());
+void attempt_upload(int idx, int v, int up) {
+    if (puzzle_controller.state() != 0)
         return;
-    }
-    if (v) {
-        dna_led[DNA_GREEN(idx)].on();
-        dna_led[DNA_RED(idx)].off();
-    } else {
-        dna_led[DNA_GREEN(idx)].off();
-        dna_led[DNA_RED(idx)].on();
-    }
+
+    for (int i = 0; i < 3; i++)
+        if (dna_sensor[i].state() != Atm_button::PRESSED)
+            dna_led[DNA_RED(i)].blink(100, 100, 10).start();
 
     if (dna_sensor[0].state() == Atm_button::PRESSED &&
         dna_sensor[1].state() == Atm_button::PRESSED &&
@@ -28,10 +23,23 @@ void validate_dna(int idx, int v, int up) {
         puzzle_controller.trigger(Atm_step::EVT_STEP);
 }
 
+
+void validate_dna(int idx, int v, int up) {
+    if (puzzle_controller.state() != 0)
+        return;
+
+    if (v) {
+        dna_led[DNA_GREEN(idx)].on();
+//        dna_led[DNA_RED(idx)].off();
+    } else {
+        dna_led[DNA_GREEN(idx)].off();
+//        dna_led[DNA_RED(idx)].on();
+    }
+}
+
 void puzzle_init(int idx, int v, int up) {
-    dna_led[DNA_RED(0)].on();
-    dna_led[DNA_RED(1)].on();
-    dna_led[DNA_RED(2)].on();
+//    for (int i = 0; i < 3; i++)
+//        dna_led[DNA_RED(i)].on();
 }
 
 void puzzle_all_dna_inserted(int idx, int v, int up) {
@@ -40,7 +48,7 @@ void puzzle_all_dna_inserted(int idx, int v, int up) {
     dna_led[DNA_GREEN(1)].lead(100).blink(100, 1500).start();
     dna_led[DNA_GREEN(2)].lead(000).blink(100, 1500).start();
 
-    timer.begin(10 * 3) // Each step takes 3 seconds
+    timer.begin(1000 * 3) // Each step takes 3 seconds
             .repeat(NUM_LEDS)
             .onTimer([](int idx, int v, int up) {
                 upload_progress++;
@@ -52,9 +60,8 @@ void puzzle_all_dna_inserted(int idx, int v, int up) {
 void puzzle_dna_uploaded(int idx, int v, int up) {
     gCurrentPatternNumber = UPLOAD_READY;
 
-    dna_led[DNA_GREEN(0)].off();
-    dna_led[DNA_GREEN(1)].off();
-    dna_led[DNA_GREEN(2)].off();
+    for (int i = 0; i < 3; i++)
+        dna_led[DNA_RED(i)].off();
 
     dna_led[DNA_GREEN(0)].lead(200).blink(300, 300).start();
     dna_led[DNA_GREEN(1)].lead(100).blink(300, 300).start();
@@ -68,7 +75,7 @@ void puzzle_dna_uploaded(int idx, int v, int up) {
 void setup() {
     Serial.begin(115200);
 
-    delay(1000); // 1 second delay for recovery
+//    delay(1000); // 1 second delay for recovery
 
     // tell FastLED about the LED strip configuration
     FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
@@ -89,6 +96,8 @@ void setup() {
     dna_sensor[0].begin(4).onPress(validate_dna, 0).onRelease(validate_dna, 0).trace(Serial);
     dna_sensor[1].begin(5).onPress(validate_dna, 1).onRelease(validate_dna, 1);
     dna_sensor[2].begin(6).onPress(validate_dna, 2).onRelease(validate_dna, 2);
+
+    big_red_button.begin(3).onPress(attempt_upload);
 #else
     dna_led[0].begin(PIN_A0).blink(1000, 300).start();
     dna_led[1].begin(PIN_A1).blink(1000, 500).start();
