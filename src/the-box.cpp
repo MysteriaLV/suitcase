@@ -1,123 +1,74 @@
 #include <Automaton.h>
-#include <FastLED.h>
-
-FASTLED_USING_NAMESPACE
-
-// FastLED "100-lines-of-code" demo reel, showing just a few
-// of the kinds of animation patterns you can quickly and easily
-// compose using FastLED.
-//
-// This example also shows one easy way to define multiple
-// animations patterns and have them automatically rotate.
-//
-// -Mark Kriegsman, December 2014
-
-#if defined(FASTLED_VERSION) && (FASTLED_VERSION < 3001000)
-#warning "Requires FastLED 3.1 or later; check github for latest code."
-#endif
-
-#define DATA_PIN    7
-#define LED_TYPE    WS2811
-#define COLOR_ORDER GRB
-#define NUM_LEDS    24
-CRGB leds[NUM_LEDS];
-
-#define BRIGHTNESS          96
-#define FRAMES_PER_SECOND  120
-
-// List of patterns to cycle through.  Each is defined as a separate function below.
-typedef void (*SimplePatternList[])();
-
-uint8_t gCurrentPatternNumber = 0; // Index number of which pattern is current
-uint8_t gHue = 0; // rotating "base color" used by many of the patterns
-
-
-void rainbow() {
-    // FastLED's built-in rainbow generator
-    fill_rainbow(leds, NUM_LEDS, gHue, 7);
-}
-
-
-void addGlitter(fract8 chanceOfGlitter) {
-    if (random8() < chanceOfGlitter) {
-        leds[random16(NUM_LEDS)] += CRGB::White;
-    }
-}
-
-void rainbowWithGlitter() {
-    // built-in FastLED rainbow, plus some random sparkly glitter
-    rainbow();
-    addGlitter(80);
-}
-
-void confetti() {
-    // random colored speckles that blink in and fade smoothly
-    fadeToBlackBy(leds, NUM_LEDS, 10);
-    int pos = random16(NUM_LEDS);
-    leds[pos] += CHSV(gHue + random8(64), 200, 255);
-}
-
-void sinelon() {
-    // a colored dot sweeping back and forth, with fading trails
-    fadeToBlackBy(leds, NUM_LEDS, 20);
-    int pos = beatsin16(13, 0, NUM_LEDS - 1);
-    leds[pos] += CHSV(gHue, 255, 192);
-}
-
-void not_ready() {
-    EVERY_N_MILLISECONDS(10) {
-        fadeToBlackBy(leds, NUM_LEDS, 1);
-    }
-    EVERY_N_SECONDS(10) {
-        fill_solid(leds, NUM_LEDS, CRGB::DarkRed);
-    }
-}
-
-void bpm() {
-    // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
-    uint8_t BeatsPerMinute = 62;
-    CRGBPalette16 palette = PartyColors_p;
-    uint8_t beat = beatsin8(BeatsPerMinute, 64, 255);
-    for (int i = 0; i < NUM_LEDS; i++) { //9948
-        leds[i] = ColorFromPalette(palette, gHue + (i * 2), beat - gHue + (i * 10));
-    }
-}
-
-void juggle() {
-    // eight colored dots, weaving in and out of sync with each other
-    fadeToBlackBy(leds, NUM_LEDS, 20);
-    byte dothue = 0;
-    for (int i = 0; i < 8; i++) {
-        leds[beatsin16(i + 7, 0, NUM_LEDS - 1)] |= CHSV(dothue, 200, 255);
-        dothue += 32;
-    }
-}
-
-//SimplePatternList gPatterns = {rainbow, rainbowWithGlitter, confetti, sinelon, juggle, bpm};
-SimplePatternList gPatterns = {sinelon};
-
-#define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
-
-void nextPattern() {
-    // add one to the current pattern number, and wrap around at the end
-    gCurrentPatternNumber = (gCurrentPatternNumber + 1) % ARRAY_SIZE(gPatterns);
-}
+#include "led_patterns.h"
 
 Atm_led dna_led[6];
 Atm_button dna_sensor[3];
+Atm_step puzzle_controller;
+
+#define DNA_GREEN(N) (N*2)
+#define DNA_RED(N) (N*2+1)
+
+void validate_dna(int idx, int v, int up) {
+    if (puzzle_controller.state() != 0) {
+        Serial.println(puzzle_controller.state());
+        return;
+    }
+    if (v) {
+        dna_led[DNA_GREEN(idx)].on();
+        dna_led[DNA_RED(idx)].off();
+    } else {
+        dna_led[DNA_GREEN(idx)].off();
+        dna_led[DNA_RED(idx)].on();
+    }
+
+    if (dna_sensor[0].state() == Atm_button::PRESSED &&
+        dna_sensor[1].state() == Atm_button::PRESSED &&
+        dna_sensor[2].state() == Atm_button::PRESSED)
+        puzzle_controller.trigger(Atm_step::EVT_STEP);
+}
+
+void puzzle_init(int idx, int v, int up) {
+    dna_led[DNA_RED(0)].on();
+    dna_led[DNA_RED(1)].on();
+    dna_led[DNA_RED(2)].on();
+}
+
+void puzzle_all_dna_inserted(int idx, int v, int up) {
+    gCurrentPatternNumber = UPLOADING;
+    dna_led[DNA_GREEN(0)].lead(200).blink(100, 1500).start();
+    dna_led[DNA_GREEN(1)].lead(100).blink(100, 1500).start();
+    dna_led[DNA_GREEN(2)].lead(000).blink(100, 1500).start();
+}
+
+void puzzle_dna_uploaded(int idx, int v, int up) {
+
+}
 
 void setup() {
     Serial.begin(115200);
 
-    delay(3000); // 3 second delay for recovery
+    delay(1000); // 1 second delay for recovery
 
     // tell FastLED about the LED strip configuration
     FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
-    //FastLED.addLeds<LED_TYPE,DATA_PIN,CLK_PIN,COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
 
     // set master brightness control
     FastLED.setBrightness(BRIGHTNESS);
 
+#ifndef MY_TEST_MODE
+    dna_led[0].begin(PIN_A0);
+    dna_led[1].begin(PIN_A1);
+
+    dna_led[2].begin(PIN_A2);
+    dna_led[3].begin(PIN_A3);
+
+    dna_led[4].begin(PIN_A4);
+    dna_led[5].begin(PIN_A5);
+
+    dna_sensor[0].begin(4).onPress(validate_dna, 0).onRelease(validate_dna, 0).trace(Serial);
+    dna_sensor[1].begin(5).onPress(validate_dna, 1).onRelease(validate_dna, 1);
+    dna_sensor[2].begin(6).onPress(validate_dna, 2).onRelease(validate_dna, 2);
+#else
     dna_led[0].begin(PIN_A0).blink(1000, 300).start();
     dna_led[1].begin(PIN_A1).blink(1000, 500).start();
 
@@ -136,12 +87,19 @@ void setup() {
     dna_sensor[btn_num++].begin(btn_pin++)
             .onPress(dna_led[led_num++], Atm_led::EVT_TOGGLE_BLINK)
             .onRelease(dna_led[led_num++], Atm_led::EVT_TOGGLE_BLINK);
-    dna_sensor[btn_num++].begin(btn_pin++)
+    dna_sensor[btn_num].begin(btn_pin)
             .onPress(dna_led[led_num++], Atm_led::EVT_TOGGLE_BLINK)
-            .onRelease(dna_led[led_num++], Atm_led::EVT_TOGGLE_BLINK);
+            .onRelease(dna_led[led_num], Atm_led::EVT_TOGGLE_BLINK);
+#endif
 
-    Serial.println(led_num);
-    Serial.println(btn_pin);
+    puzzle_controller.begin()
+            .onStep(0, puzzle_init)
+            .onStep(1, puzzle_all_dna_inserted)
+            .onStep(2, puzzle_dna_uploaded).trace(Serial);
+
+    // Start
+    puzzle_controller.trigger( puzzle_controller.EVT_STEP );
+
 }
 
 
@@ -149,19 +107,10 @@ void loop() {
     automaton.run();
 
     EVERY_N_MILLISECONDS(10) {
-//        sinelon();
-        not_ready();
-//        gPatterns[gCurrentPatternNumber]();
-
-        // send the 'leds' array out to the actual LED strip
+        gPatterns[gCurrentPatternNumber]();
         FastLED.show();
     }
-    // Call the current pattern function once, updating the 'leds' array
-
-    // insert a delay to keep the framerate modest
-//    FastLED.delay(1000 / FRAMES_PER_SECOND);
 
     // do some periodic updates
     EVERY_N_MILLISECONDS(20) { gHue++; } // slowly cycle the "base color" through the rainbow
-//    EVERY_N_SECONDS(10) { nextPattern(); } // change patterns periodically
 }
