@@ -4,6 +4,7 @@
 Atm_led dna_led[6];
 Atm_button dna_sensor[3];
 Atm_step puzzle_controller;
+Atm_timer timer;
 
 #define DNA_GREEN(N) (N*2)
 #define DNA_RED(N) (N*2+1)
@@ -38,10 +39,30 @@ void puzzle_all_dna_inserted(int idx, int v, int up) {
     dna_led[DNA_GREEN(0)].lead(200).blink(100, 1500).start();
     dna_led[DNA_GREEN(1)].lead(100).blink(100, 1500).start();
     dna_led[DNA_GREEN(2)].lead(000).blink(100, 1500).start();
+
+    timer.begin(10 * 3) // Each step takes 3 seconds
+            .repeat(NUM_LEDS)
+            .onTimer([](int idx, int v, int up) {
+                upload_progress++;
+            })
+            .onFinish(puzzle_controller, puzzle_controller.EVT_STEP)
+            .start();
 }
 
 void puzzle_dna_uploaded(int idx, int v, int up) {
+    gCurrentPatternNumber = UPLOAD_READY;
 
+    dna_led[DNA_GREEN(0)].off();
+    dna_led[DNA_GREEN(1)].off();
+    dna_led[DNA_GREEN(2)].off();
+
+    dna_led[DNA_GREEN(0)].lead(200).blink(300, 300).start();
+    dna_led[DNA_GREEN(1)].lead(100).blink(300, 300).start();
+    dna_led[DNA_GREEN(2)].lead(000).blink(300, 300).start();
+
+    dna_led[DNA_RED(0)].lead(500).blink(300, 300).start();
+    dna_led[DNA_RED(1)].lead(400).blink(300, 300).start();
+    dna_led[DNA_RED(2)].lead(300).blink(300, 300).start();
 }
 
 void setup() {
@@ -98,7 +119,7 @@ void setup() {
             .onStep(2, puzzle_dna_uploaded).trace(Serial);
 
     // Start
-    puzzle_controller.trigger( puzzle_controller.EVT_STEP );
+    puzzle_controller.trigger(puzzle_controller.EVT_STEP);
 
 }
 
@@ -112,5 +133,5 @@ void loop() {
     }
 
     // do some periodic updates
-    EVERY_N_MILLISECONDS(20) { gHue++; } // slowly cycle the "base color" through the rainbow
+    EVERY_N_MILLISECONDS(10) { gHue++; } // slowly cycle the "base color" through the rainbow
 }

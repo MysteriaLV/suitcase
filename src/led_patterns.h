@@ -18,11 +18,13 @@ CRGB leds[NUM_LEDS];
 
 
 // List of patterns to cycle through.  Each is defined as a separate function below.
-enum {NOT_READY, UPLOADING, READY};
+enum {NOT_READY, UPLOADING, UPLOAD_READY};
 typedef void (*PatternList[])();
 
 uint8_t gCurrentPatternNumber = NOT_READY; // Index number of which pattern is current
 uint8_t gHue = 0; // rotating "base color" used by many of the patterns
+
+uint8_t upload_progress = 1;
 
 
 void rainbow() {
@@ -52,8 +54,8 @@ void confetti() {
 
 void sinelon() {
     // a colored dot sweeping back and forth, with fading trails
-    fadeToBlackBy(leds, NUM_LEDS, 20);
-    int pos = beatsin16(13, 0, NUM_LEDS - 1);
+    fadeToBlackBy(leds, NUM_LEDS, 10);
+    int pos = beatsin16(60, 0, upload_progress - 1);
     leds[pos] += CHSV(gHue, 255, 192);
 }
 
@@ -76,6 +78,15 @@ void bpm() {
     }
 }
 
+void circle() {
+    // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
+    CRGBPalette16 palette = LavaColors_p;
+    uint8_t beat = (uint8_t ) (GET_MILLIS()*1.5) % 255;
+    for (int i = 0; i < NUM_LEDS; i++) {
+        leds[i] = ColorFromPalette(palette, (gHue % 100) + (i * 2), beat - gHue + (i * 10));
+    }
+}
+
 void juggle() {
     // eight colored dots, weaving in and out of sync with each other
     fadeToBlackBy(leds, NUM_LEDS, 20);
@@ -86,7 +97,7 @@ void juggle() {
     }
 }
 
-PatternList gPatterns = {not_ready, sinelon, bpm};
+PatternList gPatterns = {not_ready, sinelon, circle};
 
 
 #endif //THE_BOX_LED_PATTERNS_H
