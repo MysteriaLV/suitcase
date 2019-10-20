@@ -23,68 +23,31 @@ Atm_button& Atm_button::begin( int attached_pin ) {
   // clang-format on
   Machine::begin( state_table, ELSE );
   pin = attached_pin;
-  counter_longpress.set( 0 );
   timer_debounce.set( DEBOUNCE );
-  timer_delay.set( ATM_TIMER_OFF );
-  timer_repeat.set( ATM_TIMER_OFF );
-  timer_auto.set( ATM_TIMER_OFF );
   pinMode( pin, INPUT_PULLUP );
   return *this;
 }
 
 int Atm_button::event( int id ) {
   switch ( id ) {
-    case EVT_LMODE:
-      return counter_longpress.value > 0;
     case EVT_TIMER:
       return timer_debounce.expired( this );
-    case EVT_DELAY:
-      return timer_delay.expired( this );
-    case EVT_REPEAT:
-      return timer_repeat.expired( this );
-    case EVT_AUTO:
-      return timer_auto.expired( this );
     case EVT_PRESS:
       return !digitalRead( pin );
     case EVT_RELEASE:
       return digitalRead( pin );
-    case EVT_COUNTER:
-      return counter_longpress.expired();
   }
   return 0;
 }
 
 void Atm_button::action( int id ) {
-  int press;
   switch ( id ) {
     case ENT_PRESS:
-      onpress.push( auto_press );
-      longpress[0].push( 1 );
-      return;
-    case ENT_AUTO:
       onpress.push( 1 );
-      longpress[0].push( 1 );
       return;
     case ENT_RELEASE:
     case EXT_WRELEASE:
       onrelease.push( 0 );
-      return;
-    case ENT_LSTART:
-      counter_longpress.set( longpress_max );
-      return;
-    case ENT_LCOUNT:
-      counter_longpress.decrement();
-      press = ( longpress_max - counter_longpress.value );
-      if ( onpress.mode() == atm_connector::MODE_PUSHCB ) {
-        onpress.push( press * -1 );
-      }
-      return;
-    case ENT_LRELEASE:
-      press = ( longpress_max - counter_longpress.value );
-      onpress.push( press );
-      if ( press == 1 || press == 2 ) {
-        longpress[press-1].push( press );
-      } 
       return;
   }
 }
@@ -96,18 +59,6 @@ Atm_button& Atm_button::onPress( atm_cb_push_t callback, int idx /* = 0 */ ) {
 
 Atm_button& Atm_button::onPress( Machine& machine, int event /* = 0 */ ) {
   onpress.set( &machine, event );
-  return *this;
-}
-
-Atm_button& Atm_button::onPress( int id, atm_cb_push_t callback, int idx /* = 0 */ ) {
-  if ( id == 1 || id == 2 )
-    longpress[id-1].set( callback, idx );
-  return *this;
-}
-
-Atm_button& Atm_button::onPress( int id, Machine& machine, int event /* = 0 */ ) {
-  if ( id == 1 || id == 2 )
-    longpress[id-1].set( &machine, event );
   return *this;
 }
 
@@ -126,29 +77,10 @@ Atm_button& Atm_button::debounce( int delay ) {
   return *this;
 }
 
-Atm_button& Atm_button::longPress( int max, int delay ) {
-  longpress_max = max;
-  counter_longpress.set( longpress_max );
-  timer_delay.set( delay );
-  return *this;
-}
-
-Atm_button& Atm_button::repeat( int delay /* = 500 */, int speed /* = 50 */ ) {
-  timer_delay.set( delay );
-  timer_repeat.set( speed );
-  return *this;
-}
-
-Atm_button& Atm_button::autoPress( int delay, int press /* = 1 */ ) {
-  auto_press = press;
-  timer_auto.set( delay );
-  return *this;
-}
-
 Atm_button& Atm_button::trace( Stream& stream ) {
   const static char trace[] PROGMEM =
     "BUTTON\0EVT_LMODE\0EVT_TIMER\0EVT_DELAY\0EVT_REPEAT\0EVT_PRESS\0EVT_RELEASE\0EVT_COUNTER\0EVT_"
     "AUTO_ST\0ELSE\0IDLE\0WAIT\0PRESSED\0REPEAT\0RELEASE\0LIDLE\0LWAIT\0LPRESSED\0LRELEASE\0WRELEASE\0AUTO";
-  setTrace(&stream, atm_serial_debug::trace, trace);
+  setTrace(&stream, atm_serial_debug::trace, (char *)pgm_read_word(&trace));
   return *this;
 }

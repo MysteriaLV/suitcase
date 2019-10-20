@@ -237,6 +237,6 @@ Atm_led& Atm_led::trace( Stream& stream ) {
           "LED\0EVT_ON_TIMER\0EVT_OFF_TIMER\0EVT_WT_TIMER\0EVT_COUNTER\0EVT_ON\0EVT_OFF\0EVT_"
           "BLINK\0EVT_TOGGLE\0EVT_TOGGLE_BLINK\0ELSE\0"
           "IDLE\0ON\0START\0BLINK_OFF\0LOOP\0DONE\0OFF\0WT_ON\0WT_START";
-  setTrace(&stream, atm_serial_debug::trace, trace);
+  setTrace(&stream, atm_serial_debug::trace, (char *)pgm_read_word(trace));
   return *this;
 }

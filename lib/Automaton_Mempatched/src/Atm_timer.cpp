@@ -129,6 +129,6 @@ Atm_timer& Atm_timer::trace( Stream& stream ) {
   const static char trace[] PROGMEM =
     "TIMER\0EVT_DAYCNT\0EVT_DAYTIMER\0EVT_MSTIMER\0EVT_REPCNT\0EVT_OFF\0EVT_START\0EVT_TOGGLE\0"
     "ELSE\0IDLE\0START\0WAITD\0WAITMS\0TRIGGER\0FINISH";
-  setTrace(&stream, atm_serial_debug::trace, trace);
+  setTrace(&stream, atm_serial_debug::trace, (char *)pgm_read_word(&trace));
   return *this;
 }
