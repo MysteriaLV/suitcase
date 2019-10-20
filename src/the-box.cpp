@@ -1,6 +1,9 @@
 #include <Automaton.h>
 #include "led_patterns.h"
 
+extern void modbus_setup();
+extern void modbus_loop();
+
 Atm_led dna_led[6];
 Atm_button dna_sensor[3], big_red_button;
 Atm_step puzzle_controller;
@@ -74,6 +77,7 @@ void puzzle_dna_uploaded(int idx, int v, int up) {
 
 void setup() {
     Serial.begin(115200);
+    modbus_setup();
 
 //    delay(1000); // 1 second delay for recovery
 
@@ -134,6 +138,7 @@ void setup() {
 
 
 void loop() {
+    modbus_loop();
     automaton.run();
 
     EVERY_N_MILLISECONDS(10) {
