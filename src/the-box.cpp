@@ -1,8 +1,6 @@
 #include <Automaton.h>
 #include "led_patterns.h"
-
-extern void modbus_setup();
-extern void modbus_loop();
+#include "thebox_modbus.h"
 
 Atm_led dna_led[6];
 Atm_button dna_sensor[3], big_red_button;
@@ -20,10 +18,18 @@ void attempt_upload(int idx, int v, int up) {
         if (dna_sensor[i].state() != Atm_button::PRESSED)
             dna_led[DNA_RED(i)].blink(100, 100, 10).start();
 
+    if (dna_sensor[0].state() != Atm_button::PRESSED &&
+        dna_sensor[1].state() != Atm_button::PRESSED &&
+        dna_sensor[2].state() != Atm_button::PRESSED)
+        modbus_set(EMPTY_UPLOAD, 1);
+
+
     if (dna_sensor[0].state() == Atm_button::PRESSED &&
         dna_sensor[1].state() == Atm_button::PRESSED &&
         dna_sensor[2].state() == Atm_button::PRESSED)
         puzzle_controller.trigger(Atm_step::EVT_STEP);
+    else
+        modbus_set(INCOMPLETE_UPLOAD, 1);
 }
 
 
@@ -46,6 +52,8 @@ void puzzle_init(int idx, int v, int up) {
 }
 
 void puzzle_all_dna_inserted(int idx, int v, int up) {
+    modbus_set(COMPLETE, 1);
+
     gCurrentPatternNumber = UPLOADING;
     dna_led[DNA_GREEN(0)].lead(200).blink(100, 1500).start();
     dna_led[DNA_GREEN(1)].lead(100).blink(100, 1500).start();
@@ -61,6 +69,7 @@ void puzzle_all_dna_inserted(int idx, int v, int up) {
 }
 
 void puzzle_dna_uploaded(int idx, int v, int up) {
+    modbus_set(COMPLETE, 2);
     gCurrentPatternNumber = UPLOAD_READY;
 
     for (int i = 0; i < 3; i++)
@@ -97,7 +106,7 @@ void setup() {
     dna_led[4].begin(PIN_A4);
     dna_led[5].begin(PIN_A5);
 
-    dna_sensor[0].begin(4).onPress(validate_dna, 0).onRelease(validate_dna, 0).trace(Serial);
+    dna_sensor[0].begin(4).onPress(validate_dna, 0).onRelease(validate_dna, 0);
     dna_sensor[1].begin(5).onPress(validate_dna, 1).onRelease(validate_dna, 1);
     dna_sensor[2].begin(6).onPress(validate_dna, 2).onRelease(validate_dna, 2);
 

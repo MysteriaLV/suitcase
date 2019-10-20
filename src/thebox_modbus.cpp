@@ -2,26 +2,14 @@
 #include <Modbus.h>
 #include <ModbusIP_ESP8266AT.h>
 #include "freeMemory.h"
+#include "thebox_modbus.h"
 
 ESP8266 wifi(Serial, 115200);
 
 //ModbusIP object
 ModbusIP mb;
 
-//////////////// registers of THE-BOX ///////////////////
-enum {
-    // The first register starts at address 0
-    ACTIONS,      // Always present, used for incoming actions
-
-    // Any registered events, denoted by 'triggered_by_register' in rs485_node of Lua script, 1 and up
-    MINOR_FAILURE,
-    MAJOR_FAILURE,
-    COMPLETE,
-
-
-    TOTAL_ERRORS     // leave this one, error counter
-};
-
+void(* resetFunc) (void) = 0; //declare reset function @ address 0
 
 // Action handler. Add all your actions mapped by action_id in rs485_node of Lua script
 void process_actions() {
@@ -32,10 +20,12 @@ void process_actions() {
         case 1 : // Put here code for Reset
             Serial.println(F("[Reset] action fired"));
             digitalWrite(LED_BUILTIN, HIGH);
+            resetFunc();
             break;
         case 2 : // Put here code for Complete
             Serial.println(F("[Complete] action fired"));
             digitalWrite(LED_BUILTIN, LOW);
+            puzzle_controller.trigger(Atm_step::EVT_STEP);
             break;
         default:
             break;
@@ -57,11 +47,14 @@ void modbus_setup() {
 
 
     mb.addHreg(ACTIONS, 0);
-    mb.addHreg(MINOR_FAILURE, 0);
-    mb.addHreg(MAJOR_FAILURE, 0);
+    mb.addHreg(INCOMPLETE_UPLOAD, 0);
+    mb.addHreg(EMPTY_UPLOAD, 0);
     mb.addHreg(COMPLETE, 0);
 }
 
+void modbus_set(word event, word value) {
+    mb.Hreg(event, value);
+}
 
 void modbus_loop() {
     mb.task();              // not implemented yet: mb.Hreg(TOTAL_ERRORS, mb.task());
