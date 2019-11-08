@@ -88,8 +88,6 @@ void setup() {
     Serial.begin(115200);
     modbus_setup();
 
-//    delay(1000); // 1 second delay for recovery
-
     // tell FastLED about the LED strip configuration
     FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
 
@@ -138,7 +136,7 @@ void setup() {
     puzzle_controller.begin()
             .onStep(0, puzzle_init)
             .onStep(1, puzzle_all_dna_inserted)
-            .onStep(2, puzzle_dna_uploaded).trace(Serial);
+            .onStep(2, puzzle_dna_uploaded);
 
     // Start
     puzzle_controller.trigger(puzzle_controller.EVT_STEP);
