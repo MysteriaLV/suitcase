@@ -38,13 +38,11 @@ void process_actions() {
 void modbus_setup() {
     Serial.println(freeMemory());
 
+    if (!wifi.restart())
+        Serial.println(F("ESP8266 restart broken!"));
+
     //Config Modbus IP
     mb.config(wifi, F("AliensRoom"), F("********"));
-    Serial.print(F("FW Version:"));
-    Serial.println(wifi.getVersion().c_str());
-    Serial.print(F("IP: "));
-    Serial.println(wifi.getLocalIP().c_str());
-
 
     mb.addHreg(ACTIONS, 0);
     mb.addHreg(INCOMPLETE_UPLOAD, 0);
