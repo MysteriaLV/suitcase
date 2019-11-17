@@ -22,8 +22,8 @@ void process_actions() {
             digitalWrite(LED_BUILTIN, HIGH);
             resetFunc();
             break;
-        case 2 : // Put here code for Complete
-            Serial.println(F("[Complete] action fired"));
+        case 2 : // Put here code for Force_complete
+            Serial.println("[Force_complete] action fired");
             digitalWrite(LED_BUILTIN, LOW);
             puzzle_controller.trigger(Atm_step::EVT_STEP);
             break;
@@ -45,9 +45,9 @@ void modbus_setup() {
     mb.config(wifi, F("AliensRoom"), F("********"));
 
     mb.addHreg(ACTIONS, 0);
-    mb.addHreg(INCOMPLETE_UPLOAD, 0);
-    mb.addHreg(EMPTY_UPLOAD, 0);
     mb.addHreg(COMPLETE, 0);
+    mb.addHreg(EMPTY_UPLOAD, 0);
+    mb.addHreg(INCOMPLETE_UPLOAD, 0);
 }
 
 void modbus_set(word event, word value) {

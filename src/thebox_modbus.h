@@ -19,10 +19,9 @@ enum {
     ACTIONS,      // Always present, used for incoming actions
 
     // Any registered events, denoted by 'triggered_by_register' in rs485_node of Lua script, 1 and up
-    INCOMPLETE_UPLOAD,
-    EMPTY_UPLOAD,
     COMPLETE,
-
+    EMPTY_UPLOAD,
+    INCOMPLETE_UPLOAD,
 
     TOTAL_ERRORS     // leave this one, error counter
 };
