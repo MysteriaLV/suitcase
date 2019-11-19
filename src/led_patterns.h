@@ -34,11 +34,11 @@ void sinelon() {
 }
 
 void not_ready() {
-    EVERY_N_MILLISECONDS(10) {
-        fadeToBlackBy(leds, NUM_LEDS, 1);
+    EVERY_N_MILLISECONDS(1) {
+        fadeToBlackBy(leds, NUM_LEDS, 50);
     }
     EVERY_N_SECONDS(10) {
-        fill_solid(leds, NUM_LEDS, CRGB::DarkRed);
+        fill_solid(leds, NUM_LEDS, CRGB::Red);
     }
 }
 

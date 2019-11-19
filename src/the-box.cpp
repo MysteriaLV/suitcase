@@ -47,19 +47,21 @@ void validate_dna(int idx, int v, int up) {
 }
 
 void puzzle_init(int idx, int v, int up) {
-//    for (int i = 0; i < 3; i++)
-//        dna_led[DNA_RED(i)].on();
+    for (int i = 0; i < 3; i++) {
+        dna_led[DNA_RED(i)].off();
+        dna_led[DNA_RED(i)].off();
+    }
 }
 
 void puzzle_all_dna_inserted(int idx, int v, int up) {
-    modbus_set(COMPLETE, 1);
+//    modbus_set(COMPLETE, 1);
 
     gCurrentPatternNumber = UPLOADING;
     dna_led[DNA_GREEN(0)].lead(200).blink(100, 1500).start();
     dna_led[DNA_GREEN(1)].lead(100).blink(100, 1500).start();
     dna_led[DNA_GREEN(2)].lead(000).blink(100, 1500).start();
 
-    timer.begin(1000 * 3) // Each step takes 3 seconds
+    timer.begin(1000) // Each step takes 1 second
             .repeat(NUM_LEDS)
             .onTimer([](int idx, int v, int up) {
                 upload_progress++;
@@ -69,7 +71,7 @@ void puzzle_all_dna_inserted(int idx, int v, int up) {
 }
 
 void puzzle_dna_uploaded(int idx, int v, int up) {
-    modbus_set(COMPLETE, 2);
+    modbus_set(COMPLETE, 1);
     gCurrentPatternNumber = UPLOAD_READY;
 
     for (int i = 0; i < 3; i++)
