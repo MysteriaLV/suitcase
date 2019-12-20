@@ -1,6 +1,8 @@
 #include <Automaton.h>
+#include <SoftwareSerial.h>
 #include "led_patterns.h"
 #include "thebox_modbus.h"
+#include "freeMemory.h"
 
 Atm_led dna_led[6];
 Atm_button dna_sensor[3], big_red_button;
@@ -9,6 +11,8 @@ Atm_timer timer;
 
 #define DNA_GREEN(N) (N*2)
 #define DNA_RED(N) (N*2+1)
+
+SoftwareSerial SerialDebug(10, 11); // RX, TX
 
 void attempt_upload(int idx, int v, int up) {
     if (puzzle_controller.state() != 0)
@@ -51,6 +55,10 @@ void puzzle_init(int idx, int v, int up) {
         dna_led[DNA_RED(i)].off();
         dna_led[DNA_RED(i)].off();
     }
+    gCurrentPatternNumber = NOT_READY;
+    modbus_set(COMPLETE, 0);
+    modbus_set(INCOMPLETE_UPLOAD, 0);
+    modbus_set(EMPTY_UPLOAD, 0);
 }
 
 void puzzle_all_dna_inserted(int idx, int v, int up) {
@@ -88,6 +96,10 @@ void puzzle_dna_uploaded(int idx, int v, int up) {
 
 void setup() {
     Serial.begin(115200);
+    SerialDebug.begin(115200);
+    SerialDebug.println(F("Setup starting..."));
+    SerialDebug.println(freeMemory());
+
     modbus_setup();
 
     // tell FastLED about the LED strip configuration
@@ -143,6 +155,8 @@ void setup() {
     // Start
     puzzle_controller.trigger(puzzle_controller.EVT_STEP);
 
+    digitalWrite(LED_BUILTIN, HIGH);
+    SerialDebug.println(F("Setup complete."));
 }
 
 

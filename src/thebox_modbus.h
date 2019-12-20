@@ -6,12 +6,15 @@
 #define THE_BOX_THEBOX_MODBUS_H
 
 #include <Automaton.h>
+#include <SoftwareSerial.h>
+
 extern Atm_step puzzle_controller;
 
 extern void modbus_setup();
 extern void modbus_loop();
 extern void modbus_set(word event, word value);
 
+extern SoftwareSerial SerialDebug; // RX, TX
 
 //////////////// registers of THE-BOX ///////////////////
 enum {

@@ -1,15 +1,13 @@
 #include <ESP8266.h>
 #include <Modbus.h>
 #include <ModbusIP_ESP8266AT.h>
-#include "freeMemory.h"
 #include "thebox_modbus.h"
 
 ESP8266 wifi(Serial, 115200);
+#define Serial SerialDebug
 
 //ModbusIP object
 ModbusIP mb;
-
-void(* resetFunc) (void) = 0; //declare reset function @ address 0
 
 // Action handler. Add all your actions mapped by action_id in rs485_node of Lua script
 void process_actions() {
@@ -20,10 +18,10 @@ void process_actions() {
         case 1 : // Put here code for Reset
             Serial.println(F("[Reset] action fired"));
             digitalWrite(LED_BUILTIN, HIGH);
-            resetFunc();
+            puzzle_controller.trigger(Atm_step::EVT_LINEAR);
             break;
-        case 2 : // Put here code for Force_complete
-            Serial.println("[Force_complete] action fired");
+        case 2 : // Put here code for Force_step
+            Serial.println("[Force_step] action fired");
             digitalWrite(LED_BUILTIN, LOW);
             puzzle_controller.trigger(Atm_step::EVT_STEP);
             break;
@@ -36,10 +34,8 @@ void process_actions() {
 }
 
 void modbus_setup() {
-    Serial.println(freeMemory());
-
-    if (!wifi.restart())
-        Serial.println(F("ESP8266 restart broken!"));
+    if (!wifi.kick())
+        Serial.println(F("ESP8266 failed! Only pins 1,2 should be on."));
 
     //Config Modbus IP
     mb.config(wifi, F("AliensRoom"), F("********"));
