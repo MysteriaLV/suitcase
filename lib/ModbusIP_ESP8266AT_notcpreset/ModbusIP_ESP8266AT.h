@@ -1,6 +1,6 @@
 /*
     ModbusIP_ESP8266AT.h - Header for Modbus IP ESP8266 AT Library
-    Copyright (C) 2015 André Sarmento Barbosa
+    Copyright (C) 2015 Andrï¿½ Sarmento Barbosa
 */
 #include <Arduino.h>
 #include <Modbus.h>
@@ -11,7 +11,7 @@
 
 #define MODBUSIP_PORT 	  502
 #define MODBUSIP_MAXFRAME 200
-#define MODBUSIP_TIMEOUT   10
+#define MODBUSIP_TIMEOUT    3
 
 class ModbusIP : public Modbus {
     private:
@@ -20,7 +20,7 @@ class ModbusIP : public Modbus {
     public:
         ModbusIP();
         void config(ESP8266 &wifi, String ssid, String password);
-        void task();
+        void task(Stream &log);
 };
 
 #endif //MODBUSIP_ESP8266AT_H
