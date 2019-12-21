@@ -6,6 +6,7 @@
 #define THE_BOX_LED_PATTERNS_H
 
 #include <FastLED.h>
+#include "thebox_modbus.h"
 
 FASTLED_USING_NAMESPACE
 
@@ -18,7 +19,10 @@ CRGB leds[NUM_LEDS];
 
 
 // List of patterns to cycle through.  Each is defined as a separate function below.
-enum {NOT_READY, UPLOADING, UPLOAD_READY};
+enum {
+    NOT_READY, UPLOADING, UPLOAD_READY
+};
+
 typedef void (*PatternList[])();
 
 uint8_t gCurrentPatternNumber = NOT_READY; // Index number of which pattern is current
@@ -30,13 +34,16 @@ void sinelon() {
     // a colored dot sweeping back and forth, with fading trails
     fadeToBlackBy(leds, NUM_LEDS, 10);
     int pos = beatsin16(60, 0, upload_progress - 1);
-    leds[pos] += CHSV(gHue, 255, 192);
+    if (pos >= 0 && pos < NUM_LEDS)
+        leds[pos] += CHSV(gHue, 255, 192);
+    else
+        SerialDebug.println(pos);
 }
 
 void not_ready() {
-    EVERY_N_MILLISECONDS(1) {
-        fadeToBlackBy(leds, NUM_LEDS, 50);
-    }
+//    EVERY_N_MILLISECONDS(1) {
+    fadeToBlackBy(leds, NUM_LEDS, 50);
+//    }
     EVERY_N_SECONDS(10) {
         fill_solid(leds, NUM_LEDS, CRGB::Red);
     }
@@ -55,7 +62,7 @@ void bpm() {
 void circle() {
     // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
     CRGBPalette16 palette = LavaColors_p;
-    uint8_t beat = (uint8_t ) (GET_MILLIS()*1.5) % 255;
+    uint8_t beat = (uint8_t) (GET_MILLIS() * 1.5) % 255;
     for (int i = 0; i < NUM_LEDS; i++) {
         leds[i] = ColorFromPalette(palette, (gHue % 100) + (i * 2), beat - gHue + (i * 10));
     }

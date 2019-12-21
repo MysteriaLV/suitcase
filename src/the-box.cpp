@@ -20,7 +20,7 @@ void attempt_upload(int idx, int v, int up) {
 
     for (int i = 0; i < 3; i++)
         if (dna_sensor[i].state() != Atm_button::PRESSED)
-            dna_led[DNA_RED(i)].blink(100, 100, 10).start();
+            dna_led[DNA_RED(i)].lead(0).blink(100, 100, 10).start();
 
     if (dna_sensor[0].state() != Atm_button::PRESSED &&
         dna_sensor[1].state() != Atm_button::PRESSED &&
@@ -43,31 +43,40 @@ void validate_dna(int idx, int v, int up) {
 
     if (v) {
         dna_led[DNA_GREEN(idx)].on();
-//        dna_led[DNA_RED(idx)].off();
     } else {
         dna_led[DNA_GREEN(idx)].off();
-//        dna_led[DNA_RED(idx)].on();
     }
 }
 
 void puzzle_init(int idx, int v, int up) {
     for (int i = 0; i < 3; i++) {
-        dna_led[DNA_RED(i)].off();
-        dna_led[DNA_RED(i)].off();
+        dna_led[DNA_RED(i)].lead(0).off();
+        dna_led[DNA_GREEN(i)].lead(0).off();
+
+        dna_sensor[i].trigger(Atm_button::EVT_RELEASE);
     }
+
     gCurrentPatternNumber = NOT_READY;
+    upload_progress = 1;
+    timer.stop();
+
     modbus_set(COMPLETE, 0);
     modbus_set(INCOMPLETE_UPLOAD, 0);
     modbus_set(EMPTY_UPLOAD, 0);
 }
 
 void puzzle_all_dna_inserted(int idx, int v, int up) {
-//    modbus_set(COMPLETE, 1);
+    modbus_set(COMPLETE, 0);
+    modbus_set(INCOMPLETE_UPLOAD, 0);
+    modbus_set(EMPTY_UPLOAD, 0);
 
     gCurrentPatternNumber = UPLOADING;
     dna_led[DNA_GREEN(0)].lead(200).blink(100, 1500).start();
     dna_led[DNA_GREEN(1)].lead(100).blink(100, 1500).start();
     dna_led[DNA_GREEN(2)].lead(000).blink(100, 1500).start();
+
+    upload_progress = 1;
+    timer.stop();
 
     timer.begin(1000) // Each step takes 1 second
             .repeat(NUM_LEDS)
@@ -81,9 +90,8 @@ void puzzle_all_dna_inserted(int idx, int v, int up) {
 void puzzle_dna_uploaded(int idx, int v, int up) {
     modbus_set(COMPLETE, 1);
     gCurrentPatternNumber = UPLOAD_READY;
-
-    for (int i = 0; i < 3; i++)
-        dna_led[DNA_RED(i)].off();
+    upload_progress = NUM_LEDS;
+    timer.stop();
 
     dna_led[DNA_GREEN(0)].lead(200).blink(300, 300).start();
     dna_led[DNA_GREEN(1)].lead(100).blink(300, 300).start();
@@ -99,8 +107,6 @@ void setup() {
     SerialDebug.begin(115200);
     SerialDebug.println(F("Setup starting..."));
     SerialDebug.println(freeMemory());
-
-    modbus_setup();
 
     // tell FastLED about the LED strip configuration
     FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
@@ -155,6 +161,8 @@ void setup() {
     // Start
     puzzle_controller.trigger(puzzle_controller.EVT_STEP);
 
+    modbus_setup();
+
     digitalWrite(LED_BUILTIN, HIGH);
     SerialDebug.println(F("Setup complete."));
 }
@@ -167,8 +175,8 @@ void loop() {
     EVERY_N_MILLISECONDS(10) {
         gPatterns[gCurrentPatternNumber]();
         FastLED.show();
-    }
 
-    // do some periodic updates
-    EVERY_N_MILLISECONDS(10) { gHue++; } // slowly cycle the "base color" through the rainbow
+        // do some periodic updates
+        gHue++; // slowly cycle the "base color" through the rainbow
+    }
 }

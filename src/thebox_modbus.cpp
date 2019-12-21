@@ -19,6 +19,7 @@ void process_actions() {
             Serial.println(F("[Reset] action fired"));
             digitalWrite(LED_BUILTIN, HIGH);
             puzzle_controller.trigger(Atm_step::EVT_LINEAR);
+            puzzle_controller.trigger(puzzle_controller.EVT_STEP);
             break;
         case 2 : // Put here code for Force_step
             Serial.println("[Force_step] action fired");
@@ -38,7 +39,10 @@ void modbus_setup() {
         Serial.println(F("ESP8266 failed! Only pins 1,2 should be on."));
 
     //Config Modbus IP
-    mb.config(wifi, F("AliensRoom"), F("********"));
+    mb.config(wifi, F("AliensRoom"), F("************"));
+
+    Serial.print("IP: ");
+    Serial.println(wifi.getLocalIP().c_str());
 
     mb.addHreg(ACTIONS, 0);
     mb.addHreg(COMPLETE, 0);
@@ -51,6 +55,6 @@ void modbus_set(word event, word value) {
 }
 
 void modbus_loop() {
-    mb.task();              // not implemented yet: mb.Hreg(TOTAL_ERRORS, mb.task());
+    mb.task(SerialDebug);              // not implemented yet: mb.Hreg(TOTAL_ERRORS, mb.task());
     process_actions();
 }
