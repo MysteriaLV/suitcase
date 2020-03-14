@@ -49,6 +49,12 @@ void not_ready() {
     }
 }
 
+void off() {
+    EVERY_N_SECONDS(10) {
+        fill_solid(leds, NUM_LEDS, CRGB::Black);
+    }
+}
+
 void bpm() {
     // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
     uint8_t BeatsPerMinute = 62;
@@ -68,6 +74,6 @@ void circle() {
     }
 }
 
-PatternList gPatterns = {not_ready, sinelon, circle};
+PatternList gPatterns = {not_ready, sinelon, off};
 
 #endif //THE_BOX_LED_PATTERNS_H

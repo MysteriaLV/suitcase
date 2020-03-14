@@ -1,7 +1,7 @@
 #include <Automaton.h>
 #include <SoftwareSerial.h>
-#include "led_patterns.h"
 #include "thebox_modbus.h"
+#include "led_patterns.h"
 #include "freeMemory.h"
 
 Atm_led dna_led[6];
@@ -93,14 +93,17 @@ void puzzle_dna_uploaded(int idx, int v, int up) {
     upload_progress = NUM_LEDS;
     timer.stop();
 
-    dna_led[DNA_GREEN(0)].lead(200).blink(300, 300).start();
-    dna_led[DNA_GREEN(1)].lead(100).blink(300, 300).start();
-    dna_led[DNA_GREEN(2)].lead(000).blink(300, 300).start();
+    dna_led[DNA_GREEN(0)].off();
+    dna_led[DNA_GREEN(1)].off();
+    dna_led[DNA_GREEN(2)].off();
 
-    dna_led[DNA_RED(0)].lead(500).blink(300, 300).start();
-    dna_led[DNA_RED(1)].lead(400).blink(300, 300).start();
-    dna_led[DNA_RED(2)].lead(300).blink(300, 300).start();
+    dna_led[DNA_RED(0)].off();
+    dna_led[DNA_RED(1)].off();
+    dna_led[DNA_RED(2)].off();
 }
+
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 
 void setup() {
     Serial.begin(115200);
@@ -167,7 +170,6 @@ void setup() {
     SerialDebug.println(F("Setup complete."));
 }
 
-
 void loop() {
     modbus_loop();
     automaton.run();
@@ -180,3 +182,5 @@ void loop() {
         gHue++; // slowly cycle the "base color" through the rainbow
     }
 }
+
+#pragma clang diagnostic pop
